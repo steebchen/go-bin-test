@@ -1,0 +1,2 @@
+binaries/query-engine/*
+!binaries/query-engine/*.go
