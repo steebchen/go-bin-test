@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -21,8 +20,6 @@ const EngineVersion = "4dbefe724ae6df3621eb660a5d0e0402e34189bf"
 const EngineURL = "https://binaries.prisma.sh/master/%s/%s/%s.gz"
 
 func DownloadEngineByPlatform(name string, plat string, binaryName string, toDir string) (file string, err error) {
-	log.Printf("downloading %s", binaryName)
-
 	to := platform.CheckForExtensionByPlatform(plat, path.Join(toDir, fmt.Sprintf("prisma-%s-%s", name, binaryName)))
 
 	url := platform.CheckForExtensionByPlatform(plat, fmt.Sprintf(EngineURL, EngineVersion, binaryName, name))

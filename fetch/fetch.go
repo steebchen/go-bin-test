@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 )
@@ -10,6 +11,13 @@ func main() {
 	wd, err := os.Getwd()
 	if err != nil {
 		panic(err)
+	}
+
+	engines := []string{
+		"query-engine",
+		"migration-engine",
+		"introspection-engine",
+		"prisma-fmt",
 	}
 
 	binaries := []string{
@@ -22,9 +30,15 @@ func main() {
 		"rhel-openssl-1.1.x",
 	}
 
-	for _, binary := range binaries {
-		if _, err := DownloadEngineByPlatform("query-engine", binary, binary, path.Join(wd, "binaries", "query-engine")); err != nil {
-			panic(fmt.Errorf("download engine failed: %s", err))
+	for _, engine := range engines {
+		log.Printf("downloading %s", engine)
+
+		for _, binary := range binaries {
+			log.Printf("  %s", binary)
+
+			if _, err := DownloadEngineByPlatform(engine, binary, binary, path.Join(wd, "binaries", engine)); err != nil {
+				panic(fmt.Errorf("download engine failed: %s", err))
+			}
 		}
 	}
 }
