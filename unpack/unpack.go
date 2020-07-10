@@ -16,15 +16,15 @@ import (
 // TODO check checksum after expanding file
 
 //noinspection GoUnusedExportedFunction
-func Unpack(data []byte) {
-	name := "prisma-query-engine-" + runtime.GOOS
+func Unpack(data []byte, name string) {
+	file := fmt.Sprintf("prisma-%s-%s", name, runtime.GOOS)
 
 	// TODO check if dev env/dev binary in ~/.prisma
 	// TODO check if engine in local dir OR env var
 
 	start := time.Now()
-	dir := path.Join(".", name)
-	// dir := path.Join(os.TempDir(), name)
+	dir := path.Join(".", file)
+	// dir := path.Join(os.TempDir(), file)
 	unzipped, err := unzip(data)
 	if err != nil {
 		panic(fmt.Errorf("unpack unzip: %w", err))
@@ -32,7 +32,7 @@ func Unpack(data []byte) {
 	if err := ioutil.WriteFile(dir, unzipped, os.ModePerm); err != nil {
 		panic(fmt.Errorf("unpack write file: %w", err))
 	}
-	log.Printf("unpacked query engine at %s in %s", dir, time.Since(start))
+	log.Printf("unpacked at %s in %s", dir, time.Since(start))
 }
 
 func unzip(data []byte) ([]byte, error) {

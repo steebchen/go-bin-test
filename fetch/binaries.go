@@ -19,19 +19,19 @@ const EngineVersion = "4dbefe724ae6df3621eb660a5d0e0402e34189bf"
 // EngineURL points to an S3 bucket URL where the Prisma engines are stored.
 const EngineURL = "https://binaries.prisma.sh/master/%s/%s/%s.gz"
 
-func DownloadEngineByPlatform(name string, plat string, binaryName string, toDir string) (file string, err error) {
-	to := platform.CheckForExtensionByPlatform(plat, path.Join(toDir, fmt.Sprintf("prisma-%s-%s", name, binaryName)))
+func DownloadEngineByPlatform(name string, binaryName string, toDir string) (file string, err error) {
+	to := platform.CheckForExtensionByPlatform(binaryName, path.Join(toDir, fmt.Sprintf("prisma-%s-%s", name, binaryName)))
 
-	url := platform.CheckForExtensionByPlatform(plat, fmt.Sprintf(EngineURL, EngineVersion, binaryName, name))
+	url := platform.CheckForExtensionByPlatform(binaryName, fmt.Sprintf(EngineURL, EngineVersion, binaryName, name))
 
-	if err := download(plat, url, to); err != nil {
+	if err := download(name, binaryName, url, to); err != nil {
 		return "", fmt.Errorf("could not download %s to %s: %w", url, to, err)
 	}
 
 	return to, nil
 }
 
-func download(platform string, url string, to string) error {
+func download(name, platform, url, to string) error {
 	if err := os.MkdirAll(path.Dir(to), os.ModePerm); err != nil {
 		return fmt.Errorf("could not run MkdirAll on path %s: %w", to, err)
 	}
@@ -65,11 +65,11 @@ func download(platform string, url string, to string) error {
 	}
 
 	// temp file is ready, now copy to the original destination
-	if err := copyFile(dest, to); err != nil {
+	if err := copyFile(dest, to+".gz"); err != nil {
 		return fmt.Errorf("copy temp file: %w", err)
 	}
 
-	if err := generateGoFile(platform, to); err != nil {
+	if err := generateGoFile(name, platform, to); err != nil {
 		return fmt.Errorf("generate go binary file: %w", err)
 	}
 
@@ -79,13 +79,13 @@ func download(platform string, url string, to string) error {
 	return nil
 }
 
-func generateGoFile(platform string, file string) error {
+func generateGoFile(name, platform, file string) error {
 	f, err := os.Create(file + ".go")
 	if err != nil {
 		return fmt.Errorf("generate open go file: %w", err)
 	}
 
-	if err := bindata.WriteReleaseFunctions(f, platform, file); err != nil {
+	if err := bindata.WriteFile(f, name, platform, file+".gz"); err != nil {
 		return fmt.Errorf("generate write go file: %w", err)
 	}
 

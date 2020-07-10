@@ -12,25 +12,29 @@ import (
 	"unicode/utf8"
 )
 
-// WriteReleaseFunctions writes the release code file.
-func WriteReleaseFunctions(w io.Writer, platform string, file string) error {
-	if err := writeReleaseHeader(w, platform); err != nil {
+// TODO go fmt files after creation
+
+// WriteFile writes the release code file.
+func WriteFile(w io.Writer, name, platform, file string) error {
+	if err := writeHeader(w, name, platform); err != nil {
 		return fmt.Errorf("write header: %w", err)
 	}
 
-	if err := writeReleaseAsset(w, file); err != nil {
+	if err := writeAsset(w, file); err != nil {
 		return fmt.Errorf("write asset: %w", err)
 	}
 
 	return nil
 }
 
-// writeReleaseHeader writes output file headers.
+// writeHeader writes output file headers.
 // This targets release builds.
-func writeReleaseHeader(w io.Writer, platform string) error {
+func writeHeader(w io.Writer, name, platform string) error {
 	var excludes string
 	if platform == "linux-musl" {
 		platform = "linux"
+		// TODO dynamically construct these
+		// TODO only include these for engines, not for the CLi :D
 		excludes = `
 // +build !debian_openssl_1_0_x
 // +build !debian_openssl_1_1_x
@@ -51,23 +55,21 @@ func writeReleaseHeader(w io.Writer, platform string) error {
 package binaries
 
 import (
-	"log"
 	"github.com/steebchen/go-binaries/unpack"
 )
 
 func init() {
-	log.Printf("unpacking %s")
-	unpack.Unpack(data)
+	unpack.Unpack(data, "%s-%s")
 }
 
-`, platform, excludes, platform)
+`, platform, excludes, name, platform)
 	return err
 }
 
-// writeReleaseAsset write a release entry for the given asset.
+// writeAsset write a release entry for the given asset.
 // A release entry is a function which embeds and returns
 // the file's byte content.
-func writeReleaseAsset(w io.Writer, file string) error {
+func writeAsset(w io.Writer, file string) error {
 	fd, err := os.Open(file)
 	if err != nil {
 		return err

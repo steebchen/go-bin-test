@@ -1,8 +1,1 @@
-binaries/query-engine/*
-!binaries/query-engine/*.go
-binaries/migration-engine/*
-!binaries/migration-engine/*.go
-binaries/introspection-engine/*
-!binaries/introspection-engine/*.go
-binaries/prisma-fmt/*
-!binaries/prisma-fmt/*.go
+binaries/**/*.gz
