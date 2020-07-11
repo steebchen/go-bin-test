@@ -1,15 +1,12 @@
 package bindata
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
 // TODO go fmt files after creation
@@ -87,58 +84,6 @@ func writeAsset(w io.Writer, file string) error {
 	return assetMetadata(w, file, digest)
 }
 
-var (
-	backquote = []byte("`")
-	bom       = []byte("\xEF\xBB\xBF")
-)
-
-// sanitize prepares a valid UTF-8 string as a raw string constant.
-// Based on https://code.google.com/p/go/source/browse/godoc/static/makestatic.go?repo=tools
-func sanitize(b []byte) []byte {
-	var chunks [][]byte
-	for i, b := range bytes.Split(b, backquote) {
-		if i > 0 {
-			chunks = append(chunks, backquote)
-		}
-		for j, c := range bytes.Split(b, bom) {
-			if j > 0 {
-				chunks = append(chunks, bom)
-			}
-			if len(c) > 0 {
-				chunks = append(chunks, c)
-			}
-		}
-	}
-
-	var buf bytes.Buffer
-	sanitizeChunks(&buf, chunks)
-	return buf.Bytes()
-}
-
-func sanitizeChunks(buf *bytes.Buffer, chunks [][]byte) {
-	n := len(chunks)
-	if n >= 2 {
-		buf.WriteString("(")
-		sanitizeChunks(buf, chunks[:n/2])
-		buf.WriteString(" + ")
-		sanitizeChunks(buf, chunks[n/2:])
-		buf.WriteString(")")
-		return
-	}
-	b := chunks[0]
-	if bytes.Equal(b, backquote) {
-		buf.WriteString("\"`\"")
-		return
-	}
-	if bytes.Equal(b, bom) {
-		buf.WriteString(`"\xEF\xBB\xBF"`)
-		return
-	}
-	buf.WriteString("`")
-	buf.Write(b)
-	buf.WriteString("`")
-}
-
 func uncompressedMemcopy(w io.Writer, r io.Reader) error {
 	if _, err := fmt.Fprintf(w, `var data = []byte(`); err != nil {
 		return err
@@ -148,11 +93,8 @@ func uncompressedMemcopy(w io.Writer, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if len(b) > 0 && validSanitizedUtf8(b) {
-		w.Write(sanitize(b))
-	} else {
-		fmt.Fprintf(w, "%+q", b)
-	}
+
+	fmt.Fprintf(w, "%+q", b)
 
 	if _, err := fmt.Fprintf(w, `)`); err != nil {
 		return err
@@ -178,22 +120,4 @@ func assetMetadata(w io.Writer, file string, digest [sha256.Size]byte) error {
 
 `, size, mode, modTime, digest)
 	return err
-}
-
-func validSanitizedUtf8(b []byte) bool {
-	if !utf8.Valid(b) {
-		return false
-	}
-	for len(b) > 0 {
-		r, size := utf8.DecodeRune(b)
-		if r == 0 {
-			return false
-		}
-		if unicode.In(r, unicode.Cf) {
-			// staticcheck doesn't like these; fallback to slow decoder
-			return false
-		}
-		b = b[size:]
-	}
-	return true
 }
